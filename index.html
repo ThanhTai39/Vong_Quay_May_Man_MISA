@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vòng Quay May Mắn - Phiên bản cải tiến</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Arial&display=swap');
+:root {
+--primary-color: #FF5733;  /* Cam rực rỡ, năng động */
+  --secondary-color: #33AFFF; /* Xanh dương tươi sáng */
+  --bg-color: #FDFEFE;      /* Nền trắng ngà, sạch sẽ */
+  --text-color: #34495E;    /* Màu chữ xám đen, dễ đọc */
+  --btn-radius: 6px;
+  --transition-speed: 0.3s;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+main {
+  max-width: 480px;
+  width: 100%;
+  background: white;
+  padding: 30px 25px 40px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  text-align: center;
+}
+h1 {
+  color: var(--primary-color);
+  margin-bottom: 25px;
+  /* font-size: 2.2rem; */
+}
+h2 {
+  color: var(--secondary-color);
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+.btn-primary, .btn-secondary, .btn-spin, .btn-export {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--btn-radius);
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color var(--transition-speed);
+  user-select: none;
+}
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+.btn-primary:hover {
+  background-color: #1f2d3a;
+}
+.btn-secondary {
+  background-color: var(--secondary-color);
+  color: white;
+  margin-left: 10px;
+}
+.btn-secondary:hover {
+  background-color: #2a3a4a;
+}
+.btn-spin {
+  margin-top: 20px;
+  background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(44, 62, 80, 0.6);
+  transition: box-shadow 0.3s ease;
+}
+.btn-spin:hover {
+  box-shadow: 0 6px 15px rgba(52, 73, 94, 0.8);
+}
+.btn-export {
+  margin-top: 25px;
+  background-color: var(--secondary-color);
+  color: white;
+}
+.btn-export:hover {
+  background-color: #2a3a4a;
+}
+.hidden {
+  display: none !important;
+}
+form {
+  text-align: left;
+}
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+input[type="text"],
+input[type="tel"],
+input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  border: 2px solid #ddd;
+  border-radius: var(--btn-radius);
+  font-size: 1rem;
+  transition: border-color var(--transition-speed);
+}
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus {
+  border-color: var(--secondary-color);
+  outline: none;
+}
+.form-actions {
+  text-align: right;
+}
+.wheel-container {
+  position: relative;
+  margin: 0 auto;
+  width: 400px;
+  height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#wheel {
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(0,0,0,0.15);
+  transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
+  width: 400px;
+  height: 400px;
+}
+#wheel.spin {
+  animation: spinAnimation 4s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+}
+@keyframes spinAnimation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(var(--spin-deg)); }
+}
+#resultText {
+  margin-top: 20px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  min-height: 2em;
+  text-align: center;
+}
+.arrow-indicator {
+  position: absolute;
+  top: 50%;
+  right: -40px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 15px solid transparent;
+  border-bottom: 15px solid transparent;
+  border-left: 25px solid var(--primary-color);
+  z-index: 10;
+}
+@media (max-width: 500px) {
+  main {
+    padding: 20px 15px 30px;
+  }
+  .wheel-container {
+    width: 320px;
+    height: 320px;
+  }
+  #wheel {
+    width: 320px !important;
+    height: 320px !important;
+  }
+  .arrow-indicator {
+    right: -30px;
+    border-top: 12px solid transparent;
+    border-bottom: 12px solid transparent;
+    border-left: 20px solid var(--primary-color);
+  }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>🎉 Quà Hấp Dẫn 🎉</h1>
+  <button id="showFormBtn" class="btn-primary">Nhập thông tin & Quay</button>
+  <div id="resultDisplay" class="result-display hidden"></div>
+  <section id="formSection" class="hidden">
+    <form id="userForm" novalidate>
+      <h2>Nhập thông tin của bạn</h2>
+      <label for="mst">MST (Mã số thuế):</label>
+      <input type="text" id="mst" name="mst" required placeholder="VD: 0101234567" />
+      <label for="tenHo">Tên hộ:</label>
+      <input type="text" id="tenHo" name="tenHo" required placeholder="Tên hộ gia đình" />
+      <label for="sdt">Số điện thoại:</label>
+      <input type="tel" id="sdt" name="sdt" required pattern="0[0-9]{9,10}" placeholder="VD: 0912345678" />
+      <label for="doanhThu">Doanh thu chịu thuế (VNĐ):</label>
+      <input type="number" id="doanhThu" name="doanhThu" required min="0" placeholder="Nhập số tiền" />
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Quay vòng quay</button>
+        <button type="button" id="closeFormBtn" class="btn-secondary">Đóng</button>
+      </div>
+    </form>
+  </section>
+  <section id="wheelSection" class="hidden">
+    <div class="wheel-container" aria-label="Vòng quay may mắn">
+      <canvas id="wheel" width="400" height="400" aria-hidden="true"></canvas>
+      <div class="arrow-indicator" aria-hidden="true"></div>
+    </div>
+    <button id="spinBtn" class="btn-spin" disabled>Quay ngay!</button>
+    <p id="resultText" aria-live="polite"></p>
+    <button id="exportBtn" class="btn-export hidden">Xuất dữ liệu ra file JSON</button>
+  </section>
+</main>
+<script>
+(() => {
+  const showFormBtn = document.getElementById('showFormBtn');
+  const formSection = document.getElementById('formSection');
+  const closeFormBtn = document.getElementById('closeFormBtn');
+  const userForm = document.getElementById('userForm');
+  const wheelSection = document.getElementById('wheelSection');
+  const spinBtn = document.getElementById('spinBtn');
+  const resultText = document.getElementById('resultText');
+  const exportBtn = document.getElementById('exportBtn');
+  const wheelCanvas = document.getElementById('wheel');
+  const ctx = wheelCanvas.getContext('2d');
+  const resultDisplay = document.getElementById('resultDisplay');
+
+  const giftsSmall = [
+    { name: "Voucher 50k", color: "#f39c12" },
+    { name: "Voucher 100k", color: "#e67e22" },
+    { name: "Quà tặng nhỏ", color: "#f1c40f" },
+    { name: "Phiếu giảm giá 10%", color: "#d35400" },
+    { name: "Quà lưu niệm", color: "#f39c12" },
+    { name: "Voucher 20k", color: "#e67e22" }
+  ];
+  const giftsBig = [
+    { name: "Xe đạp điện", color: "#27ae60" },
+    { name: "Điện thoại thông minh", color: "#2ecc71" },
+    { name: "Laptop", color: "#16a085" },
+    { name: "Tivi 4K", color: "#1abc9c" },
+    { name: "Máy giặt", color: "#2ecc71" },
+    { name: "Tủ lạnh", color: "#27ae60" }
+  ];
+
+  // Always show all gifts (small + big) on the wheel
+  const allGifts = [...giftsSmall, ...giftsBig];
+  let gifts = allGifts.slice();
+  let spinning = false;
+  let currentRotation = 0;
+
+  function drawWheel(items) {
+    const num = items.length;
+    const arc = (2 * Math.PI) / num;
+    const radius = wheelCanvas.width / 2;
+    ctx.clearRect(0, 0, wheelCanvas.width, wheelCanvas.height);
+    for (let i = 0; i < num; i++) {
+      const angle = i * arc;
+      ctx.beginPath();
+      ctx.fillStyle = items[i].color;
+      ctx.moveTo(radius, radius);
+      ctx.arc(radius, radius, radius, angle, angle + arc);
+      ctx.lineTo(radius, radius);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.save();
+      ctx.fillStyle = "#fff";
+      ctx.translate(radius, radius);
+      ctx.rotate(angle + arc / 2);
+      ctx.textAlign = "right";
+      ctx.font = "bold 14px Arial";
+      ctx.fillText(items[i].name, radius - 10, 10);
+      ctx.restore();
+    }
+  }
+
+  // Determine prize pool for random selection based on revenue
+  function getPrizePoolByRevenue(revenue) {
+    if (revenue >= 1000000000) {
+      return giftsBig;
+    } else if (revenue >= 500000000 && revenue < 1000000000) {
+      return giftsSmall;
+    } else {
+      return allGifts;
+    }
+  }
+
+  // Select winning gift index from prize pool but wheel shows all gifts
+  function selectWinningGiftIndex(prizePool) {
+    // Find indexes of prizePool gifts in allGifts
+    const indexes = [];
+    for (let i = 0; i < allGifts.length; i++) {
+      if (prizePool.find(g => g.name === allGifts[i].name)) {
+        indexes.push(i);
+      }
+    }
+    // Randomly pick one index from these indexes
+    const randomIdx = indexes[Math.floor(Math.random() * indexes.length)];
+    return randomIdx;
+  }
+
+  function spinWheel(winIndex) {
+    if (spinning) return;
+    spinning = true;
+    spinBtn.disabled = true;
+    resultText.textContent = "";
+    resultDisplay.textContent = "";
+    const degreesPerSegment = 360 / gifts.length;
+    const spins = 5;
+    // Calculate stop angle so that the winning segment aligns with arrow on right (at 0deg)
+    // Arrow is at right side, so 0deg corresponds to segment centered at 0deg (right)
+    // We rotate wheel so that winning segment center is at 0deg
+    const stopAngle = 360 * spins + (360 - (winIndex * degreesPerSegment) - degreesPerSegment / 2);
+    let start = null;
+    const duration = 4000;
+
+    function animate(timestamp) {
+      if (!start) start = timestamp;
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const angle = easeOut * stopAngle;
+      currentRotation = angle % 360;
+      wheelCanvas.style.transform = `rotate(${angle}deg)`;
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        spinning = false;
+        spinBtn.disabled = false;
+        const gift = gifts[winIndex];
+        const message = `🎁 Chúc mừng bạn nhận được: ${gift.name}`;
+        resultText.textContent = message;
+        resultDisplay.textContent = message;
+        resultDisplay.classList.remove('hidden');
+        exportBtn.classList.remove('hidden');
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+
+  function saveUserData(data) {
+    localStorage.setItem('userData', JSON.stringify(data));
+  }
+
+  function exportToJsonFile(data) {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `user_data_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  showFormBtn.addEventListener('click', () => {
+    formSection.classList.remove('hidden');
+    wheelSection.classList.add('hidden');
+    resultText.textContent = "";
+    resultDisplay.textContent = "";
+    resultDisplay.classList.add('hidden');
+    exportBtn.classList.add('hidden');
+    userForm.reset();
+  });
+
+  closeFormBtn.addEventListener('click', () => {
+    formSection.classList.add('hidden');
+  });
+
+  userForm.addEventListener('submit', e => {
+    e.preventDefault();
+    if (!userForm.checkValidity()) {
+      userForm.reportValidity();
+      return;
+    }
+    const mst = userForm.mst.value.trim();
+    const tenHo = userForm.tenHo.value.trim();
+    const sdt = userForm.sdt.value.trim();
+    const doanhThu = Number(userForm.doanhThu.value) * 1000000;
+    if (doanhThu < 0) {
+      alert("Doanh thu phải là số dương.");
+      return;
+    }
+    // Always show all gifts on wheel
+    gifts = allGifts.slice();
+    drawWheel(gifts);
+    // Determine prize pool for winning gift selection
+    const prizePool = getPrizePoolByRevenue(doanhThu);
+    const winIndex = selectWinningGiftIndex(prizePool);
+    const userData = { mst, tenHo, sdt, doanhThu, gift: gifts[winIndex].name, time: new Date().toISOString() };
+    saveUserData(userData);
+    formSection.classList.add('hidden');
+    wheelSection.classList.remove('hidden');
+    spinBtn.disabled = false;
+    resultText.textContent = "";
+    spinBtn.onclick = () => spinWheel(winIndex);
+  });
+
+  exportBtn.addEventListener('click', () => {
+    const dataStr = localStorage.getItem('userData');
+    if (!dataStr) {
+      alert("Chưa có dữ liệu để xuất.");
+      return;
+    }
+    const data = JSON.parse(dataStr);
+    exportToJsonFile(data);
+  });
+
+  // Initial draw with all gifts
+  gifts = allGifts.slice();
+  drawWheel(gifts);
+})();
+</script>
+</body>
+</html>
