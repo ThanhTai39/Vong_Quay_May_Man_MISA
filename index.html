@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Vòng Quay May Mắn - Phiên bản cải tiến</title>
+<link href="https://fonts.googleapis.com/css2?family=Arial&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Arial&display=swap');
 :root {
@@ -191,6 +193,7 @@ input[type="number"]:focus {
   <h1>🎉 Quà Hấp Dẫn 🎉</h1>
   <button id="showFormBtn" class="btn-primary">Nhập thông tin & Quay</button>
   <div id="resultDisplay" class="result-display hidden"></div>
+
   <section id="formSection" class="hidden">
     <form id="userForm" novalidate>
       <h2>Nhập thông tin của bạn</h2>
@@ -208,6 +211,7 @@ input[type="number"]:focus {
       </div>
     </form>
   </section>
+
   <section id="wheelSection" class="hidden">
     <div class="wheel-container" aria-label="Vòng quay may mắn">
       <canvas id="wheel" width="400" height="400" aria-hidden="true"></canvas>
@@ -215,9 +219,11 @@ input[type="number"]:focus {
     </div>
     <button id="spinBtn" class="btn-spin" disabled>Quay ngay!</button>
     <p id="resultText" aria-live="polite"></p>
-    <button id="exportBtn" class="btn-export hidden">Xuất dữ liệu ra file JSON</button>
+    <button id="exportBtn" class="btn-export hidden">📄 Xuất JSON</button>
+    <button id="exportExcelBtn" class="btn-export hidden">📁 Xuất Excel</button>
   </section>
 </main>
+
 <script>
 (() => {
   const showFormBtn = document.getElementById('showFormBtn');
@@ -228,6 +234,7 @@ input[type="number"]:focus {
   const spinBtn = document.getElementById('spinBtn');
   const resultText = document.getElementById('resultText');
   const exportBtn = document.getElementById('exportBtn');
+  const exportExcelBtn = document.getElementById('exportExcelBtn');
   const wheelCanvas = document.getElementById('wheel');
   const ctx = wheelCanvas.getContext('2d');
   const resultDisplay = document.getElementById('resultDisplay');
@@ -248,8 +255,6 @@ input[type="number"]:focus {
     { name: "Máy giặt", color: "#2ecc71" },
     { name: "Tủ lạnh", color: "#27ae60" }
   ];
-
-  // Always show all gifts (small + big) on the wheel
   const allGifts = [...giftsSmall, ...giftsBig];
   let gifts = allGifts.slice();
   let spinning = false;
@@ -281,27 +286,19 @@ input[type="number"]:focus {
     }
   }
 
-  // Determine prize pool for random selection based on revenue
   function getPrizePoolByRevenue(revenue) {
-    if (revenue >= 1000000000) {
-      return giftsBig;
-    } else if (revenue >= 500000000 && revenue < 1000000000) {
-      return giftsSmall;
-    } else {
-      return allGifts;
-    }
+    if (revenue >= 1000000000) return giftsBig;
+    if (revenue >= 500000000) return giftsSmall;
+    return allGifts;
   }
 
-  // Select winning gift index from prize pool but wheel shows all gifts
   function selectWinningGiftIndex(prizePool) {
-    // Find indexes of prizePool gifts in allGifts
     const indexes = [];
     for (let i = 0; i < allGifts.length; i++) {
       if (prizePool.find(g => g.name === allGifts[i].name)) {
         indexes.push(i);
       }
     }
-    // Randomly pick one index from these indexes
     const randomIdx = indexes[Math.floor(Math.random() * indexes.length)];
     return randomIdx;
   }
@@ -314,9 +311,6 @@ input[type="number"]:focus {
     resultDisplay.textContent = "";
     const degreesPerSegment = 360 / gifts.length;
     const spins = 5;
-    // Calculate stop angle so that the winning segment aligns with arrow on right (at 0deg)
-    // Arrow is at right side, so 0deg corresponds to segment centered at 0deg (right)
-    // We rotate wheel so that winning segment center is at 0deg
     const stopAngle = 360 * spins + (360 - (winIndex * degreesPerSegment) - degreesPerSegment / 2);
     let start = null;
     const duration = 4000;
@@ -340,6 +334,7 @@ input[type="number"]:focus {
         resultDisplay.textContent = message;
         resultDisplay.classList.remove('hidden');
         exportBtn.classList.remove('hidden');
+        exportExcelBtn.classList.remove('hidden');
       }
     }
     requestAnimationFrame(animate);
@@ -362,6 +357,18 @@ input[type="number"]:focus {
     URL.revokeObjectURL(url);
   }
 
+  function exportToExcel(data) {
+    const wsData = [
+      ["MST", "Tên hộ", "SĐT", "Doanh thu (VNĐ)", "Phần thưởng", "Thời gian"],
+      [data.mst, data.tenHo, data.sdt, data.doanhThu, data.gift, data.time]
+    ];
+    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Thông Tin");
+   XLSX.writeFile(workbook, 'du_lieu_nguoi_choi.xlsx');
+
+  }
+
   showFormBtn.addEventListener('click', () => {
     formSection.classList.remove('hidden');
     wheelSection.classList.add('hidden');
@@ -369,6 +376,7 @@ input[type="number"]:focus {
     resultDisplay.textContent = "";
     resultDisplay.classList.add('hidden');
     exportBtn.classList.add('hidden');
+    exportExcelBtn.classList.add('hidden');
     userForm.reset();
   });
 
@@ -385,18 +393,24 @@ input[type="number"]:focus {
     const mst = userForm.mst.value.trim();
     const tenHo = userForm.tenHo.value.trim();
     const sdt = userForm.sdt.value.trim();
-    const doanhThu = Number(userForm.doanhThu.value) * 1000000;
+    const doanhThu = Number(userForm.doanhThu.value);
     if (doanhThu < 0) {
       alert("Doanh thu phải là số dương.");
       return;
     }
-    // Always show all gifts on wheel
+
     gifts = allGifts.slice();
     drawWheel(gifts);
-    // Determine prize pool for winning gift selection
     const prizePool = getPrizePoolByRevenue(doanhThu);
     const winIndex = selectWinningGiftIndex(prizePool);
-    const userData = { mst, tenHo, sdt, doanhThu, gift: gifts[winIndex].name, time: new Date().toISOString() };
+    const userData = {
+      mst,
+      tenHo,
+      sdt,
+      doanhThu,
+      gift: gifts[winIndex].name,
+      time: new Date().toISOString()
+    };
     saveUserData(userData);
     formSection.classList.add('hidden');
     wheelSection.classList.remove('hidden');
@@ -415,7 +429,16 @@ input[type="number"]:focus {
     exportToJsonFile(data);
   });
 
-  // Initial draw with all gifts
+  exportExcelBtn.addEventListener('click', () => {
+    const dataStr = localStorage.getItem('userData');
+    if (!dataStr) {
+      alert("Chưa có dữ liệu để xuất.");
+      return;
+    }
+    const data = JSON.parse(dataStr);
+    exportToExcel(data);
+  });
+
   gifts = allGifts.slice();
   drawWheel(gifts);
 })();
