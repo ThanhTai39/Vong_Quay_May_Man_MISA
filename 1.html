@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Vòng Quay May Mắn - Phiên bản cải tiến</title>
+<link href="https://fonts.googleapis.com/css2?family=Arial&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Arial&display=swap');
 :root {
@@ -11,14 +13,14 @@
   --secondary-color: #33AFFF; /* Xanh dương tươi sáng */
   --bg-color: #FDFEFE;      /* Nền trắng ngà, sạch sẽ */
   --text-color: #34495E;    /* Màu chữ xám đen, dễ đọc */
---btn-radius: 6px;
---transition-speed: 0.3s;
+  --btn-radius: 6px;
+  --transition-speed: 0.3s;
 }
 * {
   box-sizing: border-box;
 }
 body {
-  font-family: 'Helvetica', Arial, sans-serif;
+  font-family: 'Arial', sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   margin: 0;
@@ -32,12 +34,13 @@ main {
   background: white;
   padding: 30px 25px 40px;
   border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.1);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   text-align: center;
 }
 h1 {
   color: var(--primary-color);
   margin-bottom: 25px;
+  /* font-size: 2.2rem; */
 }
 h2 {
   color: var(--secondary-color);
@@ -67,7 +70,7 @@ h2 {
   margin-left: 10px;
 }
 .btn-secondary:hover {
-  background-color: #5a6a6f;
+  background-color: #2a3a4a;
 }
 .btn-spin {
   margin-top: 20px;
@@ -79,7 +82,7 @@ h2 {
   transition: box-shadow 0.3s ease;
 }
 .btn-spin:hover {
-  box-shadow: 0 6px 15px rgba(44, 62, 80, 0.8);
+  box-shadow: 0 6px 15px rgba(52, 73, 94, 0.8);
 }
 .btn-export {
   margin-top: 25px;
@@ -87,7 +90,7 @@ h2 {
   color: white;
 }
 .btn-export:hover {
-  background-color: #5a6a6f;
+  background-color: #2a3a4a;
 }
 .hidden {
   display: none !important;
@@ -132,7 +135,7 @@ input[type="number"]:focus {
 }
 #wheel {
   border-radius: 50%;
-  box-shadow: 0 0 15px rgba(44, 62, 80, 0.15);
+  box-shadow: 0 0 15px rgba(0,0,0,0.15);
   transition: transform 4s cubic-bezier(0.33, 1, 0.68, 1);
   width: 400px;
   height: 400px;
@@ -188,8 +191,9 @@ input[type="number"]:focus {
 <body>
 <main>
   <h1>🎉 Quà Hấp Dẫn 🎉</h1>
-  <button id="showFormBtn" class="btn-primary">Nhập thông tin &amp; Quay</button>
+  <button id="showFormBtn" class="btn-primary">Nhập thông tin & Quay</button>
   <div id="resultDisplay" class="result-display hidden"></div>
+
   <section id="formSection" class="hidden">
     <form id="userForm" novalidate>
       <h2>Nhập thông tin của bạn</h2>
@@ -207,6 +211,7 @@ input[type="number"]:focus {
       </div>
     </form>
   </section>
+
   <section id="wheelSection" class="hidden">
     <div class="wheel-container" aria-label="Vòng quay may mắn">
       <canvas id="wheel" width="400" height="400" aria-hidden="true"></canvas>
@@ -214,11 +219,12 @@ input[type="number"]:focus {
     </div>
     <button id="spinBtn" class="btn-spin" disabled>Quay ngay!</button>
     <p id="resultText" aria-live="polite"></p>
-    <button id="exportBtn" class="btn-export hidden">Xuất dữ liệu ra file Excel</button>
+    <button id="exportBtn" class="btn-export hidden">📄 Xuất JSON</button>
+    <button id="exportExcelBtn" class="btn-export hidden">📁 Xuất Excel</button>
   </section>
 </main>
+
 <script>
-// =========================== LOGIC ===============================
 (() => {
   const showFormBtn = document.getElementById('showFormBtn');
   const formSection = document.getElementById('formSection');
@@ -228,11 +234,12 @@ input[type="number"]:focus {
   const spinBtn = document.getElementById('spinBtn');
   const resultText = document.getElementById('resultText');
   const exportBtn = document.getElementById('exportBtn');
+  const exportExcelBtn = document.getElementById('exportExcelBtn');
   const wheelCanvas = document.getElementById('wheel');
   const ctx = wheelCanvas.getContext('2d');
   const resultDisplay = document.getElementById('resultDisplay');
 
- const giftsSmall = [
+  const giftsSmall = [
     { name: "Voucher 50k", color: "#f39c12" },
     { name: "Voucher 100k", color: "#e67e22" },
     { name: "Quà tặng nhỏ", color: "#f1c40f" },
@@ -273,20 +280,16 @@ input[type="number"]:focus {
       ctx.translate(radius, radius);
       ctx.rotate(angle + arc / 2);
       ctx.textAlign = "right";
-      ctx.font = "bold 14px Helvetica, Arial, sans-serif";
+      ctx.font = "bold 14px Arial";
       ctx.fillText(items[i].name, radius - 10, 10);
       ctx.restore();
     }
   }
 
   function getPrizePoolByRevenue(revenue) {
-    if (revenue >= 1000000000) {
-      return giftsBig;
-    } else if (revenue >= 500000000 && revenue < 1000000000) {
-      return giftsSmall;
-    } else {
-      return allGifts;
-    }
+    if (revenue >= 1000000000) return giftsBig;
+    if (revenue >= 500000000) return giftsSmall;
+    return allGifts;
   }
 
   function selectWinningGiftIndex(prizePool) {
@@ -331,6 +334,7 @@ input[type="number"]:focus {
         resultDisplay.textContent = message;
         resultDisplay.classList.remove('hidden');
         exportBtn.classList.remove('hidden');
+        exportExcelBtn.classList.remove('hidden');
       }
     }
     requestAnimationFrame(animate);
@@ -340,12 +344,29 @@ input[type="number"]:focus {
     localStorage.setItem('userData', JSON.stringify(data));
   }
 
-  // Xuất file Excel bằng SheetJS
-  function exportToExcelFile(data) {
-    const ws = XLSX.utils.json_to_sheet([data]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "UserData");
-    XLSX.writeFile(wb, `user_data_${Date.now()}.xlsx`);
+  function exportToJsonFile(data) {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `user_data_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportToExcel(data) {
+    const wsData = [
+      ["MST", "Tên hộ", "SĐT", "Doanh thu (VNĐ)", "Phần thưởng", "Thời gian"],
+      [data.mst, data.tenHo, data.sdt, data.doanhThu, data.gift, data.time]
+    ];
+    const worksheet = XLSX.utils.aoa_to_sheet(wsData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Thông Tin");
+   XLSX.writeFile(workbook, 'du_lieu_nguoi_choi.xlsx');
+
   }
 
   showFormBtn.addEventListener('click', () => {
@@ -355,6 +376,7 @@ input[type="number"]:focus {
     resultDisplay.textContent = "";
     resultDisplay.classList.add('hidden');
     exportBtn.classList.add('hidden');
+    exportExcelBtn.classList.add('hidden');
     userForm.reset();
   });
 
@@ -371,16 +393,24 @@ input[type="number"]:focus {
     const mst = userForm.mst.value.trim();
     const tenHo = userForm.tenHo.value.trim();
     const sdt = userForm.sdt.value.trim();
-    const doanhThu = Number(userForm.doanhThu.value) * 1000000;
+    const doanhThu = Number(userForm.doanhThu.value);
     if (doanhThu < 0) {
       alert("Doanh thu phải là số dương.");
       return;
     }
+
     gifts = allGifts.slice();
     drawWheel(gifts);
     const prizePool = getPrizePoolByRevenue(doanhThu);
     const winIndex = selectWinningGiftIndex(prizePool);
-    const userData = { mst, tenHo, sdt, doanhThu, gift: gifts[winIndex].name, time: new Date().toISOString() };
+    const userData = {
+      mst,
+      tenHo,
+      sdt,
+      doanhThu,
+      gift: gifts[winIndex].name,
+      time: new Date().toISOString()
+    };
     saveUserData(userData);
     formSection.classList.add('hidden');
     wheelSection.classList.remove('hidden');
@@ -396,15 +426,22 @@ input[type="number"]:focus {
       return;
     }
     const data = JSON.parse(dataStr);
-    exportToExcelFile(data);
+    exportToJsonFile(data);
   });
 
-  // Vẽ lần đầu với đủ quà
+  exportExcelBtn.addEventListener('click', () => {
+    const dataStr = localStorage.getItem('userData');
+    if (!dataStr) {
+      alert("Chưa có dữ liệu để xuất.");
+      return;
+    }
+    const data = JSON.parse(dataStr);
+    exportToExcel(data);
+  });
+
   gifts = allGifts.slice();
   drawWheel(gifts);
 })();
 </script>
-<!-- Thư viện SheetJS để xuất Excel -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
 </html>
